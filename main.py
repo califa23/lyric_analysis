@@ -3,6 +3,7 @@ import urllib3
 from bs4 import BeautifulSoup
 import time
 import random
+import os
 
 charts_url = 'https://www.billboard.com/charts/hot-100/'
 
@@ -59,19 +60,52 @@ def save_all_lyrics(songs_and_urls):
     for song in songs_and_urls:
         count += 1
         print('--' + str(round((count/len(songs_and_urls))*100,2)) + '%: ' + song[0].strip(), end='')
-        f = open('.\\resources\\' + song[0].strip() + '.txt', 'w+')
+        f = open('./resources/' + song[0].strip() + '.txt', 'w+')
         f.write(get_lyrics(song[2], song[0], song[1]).strip())
         print('--' + str(f.tell()))
         f.close()
     print('done saving.')
 
+def load_corpus_from_saved_files():
+    print('creating corpus from resources...')
+    corpus = ""
+    file_names = [f for f in os.listdir('./resources') if os.path.isfile(os.path.join('./resources', f))]
+    for file_name in file_names:
+        file = open('./resources/' + file_name, 'r')
+        for line in file:
+            corpus += line
+        file.close()
+    print('done creating corpus.')
+    return corpus
 
-def main():
-    print('starting...')
+def web_scrape_corpus(save = False):
+    print('scraping for corpus...')
+    corpus = ""
+    count = 0
     top_songs = get_top_songs(20)
     songs_and_urls = get_all_lyrics_urls(top_songs)
-    save_all_lyrics(songs_and_urls[18:])
-    print('done.')
+    for song in songs_and_urls:
+        count += 1
+        print('--' + str(round((count/len(songs_and_urls))*100,2)) + '%: ' + song[0].strip(), end='')
+        corpus += get_lyrics(song[2], song[0], song[1]).strip()
+    print('done scraping.')
+    if save:
+        save_all_lyrics(songs_and_urls)
+    return corpus
+
+def main():
+    print('starting program...')
+    have_saved = True
+    if have_saved:
+        corpus = load_corpus_from_saved_files()
+    else:
+        corpus = web_scrape_corpus(False)
+
+    
+
+    print('program done.')
+
+
 
 if __name__ == '__main__':
     main()
