@@ -6,7 +6,7 @@ import random
 
 charts_url = 'https://www.billboard.com/charts/hot-100/'
 
-def get_top(amount = 10):
+def get_top_songs(amount = 10):
     http = urllib3.PoolManager()
     page = http.request('GET', charts_url)
     soup = BeautifulSoup(page.data, "html.parser")
@@ -18,7 +18,7 @@ def get_top(amount = 10):
         song_name_html = li.find('h3', id='title-of-a-story')
         artist_html = li.find('span')
         if song_name_html and count < amount:
-            song_name = re.sub('[^A-Za-z0-9.]+', ' ', song_name_html.text).lower()
+            song_name = re.sub(' +', ' ', song_name_html.text).lower()
             artist = re.sub('[^A-Za-z0-9.&]+', ' ', artist_html.text).lower()
             artist = artist.split('&')[0]
             artist = artist.split('featuring')[0]
@@ -37,30 +37,41 @@ def get_all_lyrics_urls(songs):
         urls.append((song[0], song[1], get_lyrics_url(song[0], song[1])))
     return urls
 
-def get_lyrics(url, song_name):
+def get_lyrics(url, song_name, artist):
     http = urllib3.PoolManager()
     page = http.request('GET', url)
     soup = BeautifulSoup(page.data, "html.parser")
     raw = soup.text
-    start_pattern = re.compile(r'\n{2}"' + song_name.strip() + '"', re.IGNORECASE)
+    start_pattern = r'' + artist.strip() + r'\s*(&?)? .*\n+"' + song_name.strip() + r'"'
+    start_pattern = re.compile(start_pattern, re.IGNORECASE)
     matches = list(start_pattern.finditer(raw))
+    if not matches:
+        print('--no regex match found' + song_name.strip(), end='')
+        return '~~~~~ERROR_DURING_RETRIEVAL~~~~~'
     start = matches[-1].end()
     stop = re.search(r'Submit Corrections', raw).start()
     time.sleep(random.randint(5, 15))
     return raw[start:stop]
 
+def save_all_lyrics(songs_and_urls):
+    print('saving lyrics to resources...')
+    count = 0
+    for song in songs_and_urls:
+        count += 1
+        print('--' + str(round((count/len(songs_and_urls))*100,2)) + '%: ' + song[0].strip(), end='')
+        f = open('.\\resources\\' + song[0].strip() + '.txt', 'w+')
+        f.write(get_lyrics(song[2], song[0], song[1]).strip())
+        print('--' + str(f.tell()))
+        f.close()
+    print('done saving.')
+
+
 def main():
     print('starting...')
-    top = get_top(1)
-    songs_and_urls = get_all_lyrics_urls(top)
-    print(songs_and_urls)
-    # for song in songs_and_urls:
-    #     print('==========='+song[0]+'===========')
-    #     print(get_lyrics(song[2], song[0]).strip())
-
-
-
-
+    top_songs = get_top_songs(20)
+    songs_and_urls = get_all_lyrics_urls(top_songs)
+    save_all_lyrics(songs_and_urls[18:])
+    print('done.')
 
 if __name__ == '__main__':
     main()
