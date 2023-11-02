@@ -66,14 +66,14 @@ def save_all_lyrics(songs_and_urls):
         f.close()
     print('done saving.')
 
-def load_corpus_from_saved_files():
+def load_corpus_from_saved_files(amount='all', path='./resources/'):
     print('creating corpus from resources...')
     corpus = ""
-    file_names = [f for f in os.listdir('./resources') if os.path.isfile(os.path.join('./resources', f))]
+    file_names = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
     for file_name in file_names:
-        file = open('./resources/' + file_name, 'r')
+        file = open(path + file_name, 'r')
         for line in file:
-            corpus += line
+            corpus += line + '\n'
         file.close()
     print('done creating corpus.')
     return corpus
@@ -87,8 +87,8 @@ def web_scrape_corpus(save = False, amount = 20):
     for song in songs_and_urls:
         count += 1
         print('--' + str(round((count/len(songs_and_urls))*100,2)) + '%: ' + song[0].strip())
-        corpus += get_lyrics(song[2], song[0], song[1]).strip()
+        corpus += get_lyrics(song[2], song[0], song[1]).strip() + '\n'
     print('done scraping.')
-    if save:
-        save_all_lyrics(songs_and_urls)
+    # if save:
+    #     save_all_lyrics(songs_and_urls)
     return corpus
