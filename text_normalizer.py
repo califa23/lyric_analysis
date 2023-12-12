@@ -85,11 +85,10 @@ def remove_stopwords(text, is_lower_case=False, stopwords=stopword_list):
 
 def normalize_corpus(corpus, html_stripping=True, contraction_expansion=True,
                      accented_char_removal=True, text_lower_case=True,
-                     text_stemming=False, text_lemmatization=True,
+                     text_stemming=False, text_lemmatization=False,
                      special_char_removal=True, remove_digits=True,
-                     stopword_removal=True, stopwords=stopword_list):
+                     stopword_removal=False, stopwords=stopword_list):
 
-    corpus = nltk.word_tokenize(corpus)
     normalized_corpus = []
     # normalize each document in the corpus
     count = 0
@@ -99,8 +98,7 @@ def normalize_corpus(corpus, html_stripping=True, contraction_expansion=True,
         status = str(round((count / total) * 100, 2))
 
         print('\r',end='',flush=True)
-        print(status, end='', flush=True)
-
+        print(status + '%', end='', flush=True)
         # remove extra newlines
         doc = doc.translate(doc.maketrans("\n\t\r", "   "))
 
@@ -143,16 +141,16 @@ def normalize_corpus(corpus, html_stripping=True, contraction_expansion=True,
         doc = doc.strip()
 
         normalized_corpus.append(doc)
-
+    print()
     return [i for i in normalized_corpus if i]
 
 
 
 def normalize_corpusV2(corpus, html_stripping=True, contraction_expansion=True,
                      accented_char_removal=True, text_lower_case=True,
-                     text_stemming=False, text_lemmatization=True,
+                     text_stemming=False, text_lemmatization=False,
                      special_char_removal=True, remove_digits=True,
-                     stopword_removal=True, stopwords=stopword_list):
+                     stopword_removal=False, stopwords=stopword_list, tokenize=False):
 
     doc = corpus
         # remove extra newlines
@@ -181,6 +179,7 @@ def normalize_corpusV2(corpus, html_stripping=True, contraction_expansion=True,
         doc = special_char_pattern.sub(" \\1 ", doc)
         doc = remove_special_characters(doc, remove_digits=remove_digits)
 
+    # doc = re.sub('yeah', '', doc)
         # remove extra whitespace
     doc = re.sub(' +', ' ', doc)
 
@@ -196,5 +195,8 @@ def normalize_corpusV2(corpus, html_stripping=True, contraction_expansion=True,
     doc = re.sub(' +', ' ', doc)
     doc = doc.strip()
 
-    corpus = nltk.word_tokenize(doc)
+    if tokenize:
+        doc = nltk.word_tokenize(doc)
+
+    corpus = doc
     return corpus
