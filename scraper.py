@@ -86,7 +86,7 @@ def save_lyrics(all_lyrics):
         f.close()
     print('saved files to ' + path + '/')
 
-def load_corpus_from_saved_files(path='./resources/test/'):
+def load_corpus_from_saved_files(path='./resources/' + str(date.today()) + '/'):
     print('creating corpus from resources...')
     corpus = []
     file_names = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
