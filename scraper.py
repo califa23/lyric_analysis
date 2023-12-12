@@ -80,7 +80,7 @@ def save_lyrics(all_lyrics):
     if not os.path.exists(path):
         os.makedirs(path)
     for lyrics in all_lyrics:
-        f = open(path + '/' + lyrics[0].strip() + '.txt', 'w+')
+        f = open(path + '/' + re.sub('[^A-Za-z0-9. ]+','', lyrics[0].strip()).lower() + '.txt', 'w+')
         f.write(lyrics[1].strip())
         print('--' + str(f.tell()))
         f.close()
@@ -91,6 +91,9 @@ def load_corpus_from_saved_files(path='./resources/test/'):
     corpus = []
     file_names = [f for f in os.listdir(path) if os.path.isfile(os.path.join(path, f))]
     for file_name in file_names:
+        if open(path + file_name, 'r').readline() == '~~~~~ERROR_DURING_RETRIEVAL~~~~~':
+            os.remove(path + file_name)
+            continue
         data = ''
         file = open(path + file_name, 'r')
         for line in file:
