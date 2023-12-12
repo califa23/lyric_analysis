@@ -95,7 +95,7 @@ def load_corpus_from_saved_files(path='./resources/test/'):
         file = open(path + file_name, 'r')
         for line in file:
             data += line + '\n'
-        corpus.append(data)
+        corpus.append((file_name, data))
         file.close()
     print('done creating corpus.')
     return corpus

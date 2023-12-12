@@ -93,10 +93,11 @@ def normalize_corpus(corpus, html_stripping=True, contraction_expansion=True,
     # normalize each document in the corpus
     count = 0
     total = len(corpus)
-    for doc in corpus:
+    for d in corpus:
         count += 1
         status = str(round((count / total) * 100, 2))
-
+        name = d[0]
+        doc = d[1]
         print('\r',end='',flush=True)
         print(status + '%', end='', flush=True)
         # remove extra newlines
@@ -140,7 +141,7 @@ def normalize_corpus(corpus, html_stripping=True, contraction_expansion=True,
         doc = re.sub(' +', ' ', doc)
         doc = doc.strip()
 
-        normalized_corpus.append(doc)
+        normalized_corpus.append((name, doc))
     print()
     return [i for i in normalized_corpus if i]
 

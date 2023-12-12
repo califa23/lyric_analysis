@@ -10,6 +10,7 @@ import pytextrank
 from sklearn.feature_extraction.text import TfidfVectorizer
 import pandas as pd
 import numpy as np
+import networkx as nx
 
 def most_common(normalized_corpus):
     # most common words across all songs
@@ -120,10 +121,10 @@ def main():
     print('starting program...')
 
     # save top 20 song lyrics to txt files
-    # scraper.web_scrape_lyrics(save=True, amount=1)
+    # scraper.web_scrape_lyrics(save=True, amount=20)
 
     # load corpus from specified directory
-    corpus = scraper.load_corpus_from_saved_files('./resources/test/')
+    corpus = scraper.load_corpus_from_saved_files('./resources/test2/')
     # at this point, corpus is a list of strings
     # each element being the lyrics to one song
     # not cleaned or tokenized
@@ -142,24 +143,38 @@ def main():
     # analysis of all the lyrics of all the songs
     #overall_analysis(corpus)
 
-    # similarity of all songs
+    # Specify the index of the song you want to compare
+    song_index_to_compare = 0
+
+    # Extract song names and lyrics
+    song_names, song_lyrics = zip(*normalized_corpus)
+
+    # Create a TfidfVectorizer
     tv = TfidfVectorizer(min_df=0., max_df=1., use_idf=True)
-    dt_matrix = tv.fit_transform(normalized_corpus)
+    dt_matrix = tv.fit_transform(song_lyrics)
     dt_matrix = dt_matrix.toarray()
 
-    vocab = tv.get_feature_names()
-    td_matrix = dt_matrix.T
-    pd.DataFrame(np.round(td_matrix, 2), index=vocab).head(10)
+    # Compute the similarity matrix for the selected song against all others
+    similarity_vector = np.dot(dt_matrix, dt_matrix[song_index_to_compare])
 
-    similarity_matrix = np.matmul(dt_matrix, dt_matrix.T)
-    print(similarity_matrix.shape)
-    print(np.round(similarity_matrix, 3))
+    # Print the similarity scores
+    similarity_scores = pd.DataFrame({'Song': song_names, 'Similarity': similarity_vector})
+    print(similarity_scores)
 
-    import networkx
+    # Create a similarity graph with labeled nodes
+    similarity_graph = nx.Graph()
+    for i, (name, score) in enumerate(zip(song_names, similarity_vector)):
+        similarity_graph.add_node(i, label=name)
+        similarity_graph.add_edge(song_index_to_compare, i, weight=score)
 
-    similarity_graph = networkx.from_numpy_array(similarity_matrix)
-    plt.figure(figsize=(12, 6))
-    networkx.draw_networkx(similarity_graph, node_color='lime')
+    # Plot the similarity graph with labeled nodes
+    plt.figure(figsize=(12, 12))
+    pos = nx.spring_layout(similarity_graph)
+    labels = nx.get_node_attributes(similarity_graph, 'label')
+    edge_labels = nx.get_edge_attributes(similarity_graph, 'weight')
+    nx.draw_networkx(similarity_graph, pos, node_color='lime', labels=labels, with_labels=True)
+    nx.draw_networkx_edge_labels(similarity_graph, pos, edge_labels=edge_labels, font_color='red')
+    plt.title(f"Similarity of {song_names[song_index_to_compare]} to Other Songs")
     plt.show()
 
     print('program done.')
