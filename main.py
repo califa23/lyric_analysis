@@ -9,6 +9,7 @@ import spacy
 import pytextrank
 from sklearn.feature_extraction.text import TfidfVectorizer
 import pandas as pd
+import numpy as np
 
 def most_common(normalized_corpus):
     # most common words across all songs
@@ -86,27 +87,22 @@ def individual_analysis(normalized_corpus):
         # summary = " ".join(summary_phrases)
         #
         # print(summary)
+        print('')
 
 
 
-        tv = TfidfVectorizer(min_df=0., max_df=1., use_idf=True)
-        dt_matrix = tv.fit_transform(norm_sentences)
-        dt_matrix = dt_matrix.toarray()
 
-        vocab = tv.get_feature_names()
-        td_matrix = dt_matrix.T
-        print(td_matrix.shape)
-        pd.DataFrame(np.round(td_matrix, 2), index=vocab).head(10)
+
 
 
 
 def overall_analysis(corpus):
     corpus_concat = ' '.join(corpus)
-    noarmalized_corpus_concat = tn.normalize_corpusV2(corpus_concat, stopword_removal=True, text_lemmatization=True)
-    most_common(noarmalized_corpus_concat)
+    noramalized_corpus_concat = tn.normalize_corpusV2(corpus_concat, stopword_removal=True, text_lemmatization=True)
+    most_common(noramalized_corpus_concat)
 
     # NRCLex analysis
-    emotion = NRCLex(noarmalized_corpus_concat)
+    emotion = NRCLex(noramalized_corpus_concat)
     data = emotion.affect_frequencies
     print(data)
     plot_NRCLex_emotion(data)
@@ -127,7 +123,7 @@ def main():
     # scraper.web_scrape_lyrics(save=True, amount=1)
 
     # load corpus from specified directory
-    corpus = scraper.load_corpus_from_saved_files('./resources/test/test/')
+    corpus = scraper.load_corpus_from_saved_files('./resources/test/')
     # at this point, corpus is a list of strings
     # each element being the lyrics to one song
     # not cleaned or tokenized
@@ -139,18 +135,32 @@ def main():
 
 
 
+
     # analysis of each individual song's lyrics
-    individual_analysis(normalized_corpus)
+    # individual_analysis(normalized_corpus)
 
     # analysis of all the lyrics of all the songs
     #overall_analysis(corpus)
 
+    # similarity of all songs
+    tv = TfidfVectorizer(min_df=0., max_df=1., use_idf=True)
+    dt_matrix = tv.fit_transform(normalized_corpus)
+    dt_matrix = dt_matrix.toarray()
 
+    vocab = tv.get_feature_names()
+    td_matrix = dt_matrix.T
+    pd.DataFrame(np.round(td_matrix, 2), index=vocab).head(10)
 
+    similarity_matrix = np.matmul(dt_matrix, dt_matrix.T)
+    print(similarity_matrix.shape)
+    print(np.round(similarity_matrix, 3))
 
+    import networkx
 
-
-
+    similarity_graph = networkx.from_numpy_array(similarity_matrix)
+    plt.figure(figsize=(12, 6))
+    networkx.draw_networkx(similarity_graph, node_color='lime')
+    plt.show()
 
     print('program done.')
 
