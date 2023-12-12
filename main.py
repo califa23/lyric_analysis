@@ -215,7 +215,7 @@ def main():
     print('starting program...')
 
     # save top song lyrics to txt files
-    # scraper.web_scrape_lyrics(save=True, amount=30)
+    scraper.web_scrape_lyrics(save=True, amount=30)
 
     # load corpus from specified directory
     corpus = scraper.load_corpus_from_saved_files()
