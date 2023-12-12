@@ -6,7 +6,6 @@ from datetime import date
 import matplotlib.pyplot as plt
 from nrclex import NRCLex
 import nltk
-from transformers import pipeline
 import spacy
 import pytextrank
 from sklearn.feature_extraction.text import TfidfVectorizer
@@ -14,15 +13,20 @@ from sklearn.feature_extraction.text import CountVectorizer
 import pandas as pd
 import numpy as np
 import networkx as nx
+from transformers import pipeline, LongformerTokenizer, LongformerForSequenceClassification
 
-def most_common(song_name, doc, plot = False):
+# Load the Longformer tokenizer and model
+# tokenizer = LongformerTokenizer.from_pretrained("allenai/longformer-base-4096")
+# model = LongformerForSequenceClassification.from_pretrained("allenai/longformer-base-4096")
+
+def most_common(song_name, lyrics, plot = False):
     # most common words across all songs
-    normalized_corpus = nltk.word_tokenize(doc)
+    normalized_corpus = nltk.word_tokenize(lyrics)
     from collections import Counter
     c = Counter(normalized_corpus)
     print('Unique words: ', len(c))
     most_frequent = c.most_common(300)
-    print(most_frequent[0])
+    print('Most common word: ' + most_frequent[0][0])
 
     from wordcloud import WordCloud
     # Extract words and counts
@@ -60,51 +64,77 @@ def plot_NRCLex_emotion(data, title):
     plt.savefig(path + title)
     plt.close()
 
-def NRCLex_analysis(song_name, doc, plot = False):
-    emotion = NRCLex(doc)
+def NRCLex_analysis(song_name, lyrics, plot = False):
+    emotion = NRCLex(lyrics)
     data = emotion.affect_frequencies
-    print(song_name + ': ' + max(data, key=data.get))
+    print('emotion: ' + max(data, key=data.get))
 
     if plot:
         plot_NRCLex_emotion(data, song_name)
 
+# def transformers_analysis(lyrics):
+    # sentiment_analyzer = pipeline("sentiment-analysis")
+    # result = sentiment_analyzer(lyrics)
+    # print('POS/NEG: ' + result[0]['label'] + ' with a score of ' + str(result[0]['score']))
+    #
+    # tokens = tokenizer(lyrics, return_tensors="pt", max_length=4096, truncation=True, padding=True)
+    # result = model(**tokens)
+    # logits = result.logits
+    # probabilities = logits.softmax(dim=1)
+    # print(probabilities)
+    # positive_prob = probabilities[0, 0].item()
+    # negative_prob = probabilities[0, 1].item()
+    #
+    # if positive_prob > negative_prob:
+    #     print("Positive sentiment")
+    # else:
+    #     print("Negative sentiment")
+
+def summarize(song_name, lyrics, plot = True):
+    nlp = spacy.load("en_core_web_sm")
+    nlp.add_pipe("textrank")
+    lyrics = nlp(lyrics)
+
+    summary_phrases = [phrase.text for phrase in lyrics._.phrases if phrase.rank > 0.1]
+    summary = " ".join(summary_phrases)
+    print('Summary: ' + summary)
+
+    if plot:
+        top_phrases = sorted(lyrics._.phrases, key=lambda x: x.rank, reverse=True)[:10]
+        phrases = [phrase.text for phrase in top_phrases]
+        ranks = [phrase.rank for phrase in top_phrases]
+        counts = [phrase.count for phrase in top_phrases]
+
+        fig, ax = plt.subplots(figsize=(10, 6))
+        ax.barh(phrases, ranks, color='skyblue')
+        ax.set_xlabel('Rank')
+        ax.set_title(song_name)
+
+        for i, count in enumerate(counts):
+            ax.text(ranks[i] + 0.01, i, f'Count: {count}', va='center', color='black')
+
+        path = './plots/' + str(date.today()) + '/summary/'
+        if not os.path.exists(path):
+            os.makedirs(path)
+        plt.savefig(path + song_name)
+        plt.close()
+
 def individual_analysis(normalized_corpus):
-    # song_names, song_lyrics = zip(*normalized_corpus)
-    for song_name, doc in normalized_corpus:
+
+    for song_name, lyrics in normalized_corpus:
+        print('============={}============='.format(song_name.center(40, '=')))
+
+        # Most common words
+        most_common(song_name, lyrics, True)
         # NRCLex analysis
-        NRCLex_analysis(song_name, doc, True)
-        most_common(song_name, doc, True)
-
-
+        NRCLex_analysis(song_name, lyrics, True)
         # transformers analysis
-        # sentiment_analyzer = pipeline("sentiment-analysis")
-        # result = sentiment_analyzer(doc)
-        # print(result)
-
-
+        # transformers_analysis(lyrics)
         # spaCy summarization
-        # nlp = spacy.load("en_core_web_sm")
-        # nlp.add_pipe("textrank")
-        # doc = nlp(doc)
-        #
-        # top_phrases = sorted(doc._.phrases, key=lambda x: x.rank, reverse=True)[:10]
-        # phrases = [phrase.text for phrase in top_phrases]
-        # ranks = [phrase.rank for phrase in top_phrases]
-        # counts = [phrase.count for phrase in top_phrases]
-        #
-        # # Plot the results
-        # fig, ax = plt.subplots(figsize=(10, 6))
-        # ax.barh(phrases, ranks, color='skyblue')
-        # ax.set_xlabel('Rank')
-        # ax.set_title('Top-Ranked Phrases')
-        #
-        # for i, count in enumerate(counts):
-        #     ax.text(ranks[i] + 0.01, i, f'Count: {count}', va='center', color='black')
-        # plt.show()
-        # # Extract and print the top-ranked phrases as the summary
-        # summary_phrases = [phrase.text for phrase in doc._.phrases if phrase.rank > 0.1]
-        # summary = " ".join(summary_phrases)
-        # print(summary)
+        summarize(song_name, lyrics, True)
+
+        print('='*66)
+        print()
 
 def overall_analysis(corpus):
     song_names, song_lyrics = zip(*corpus)
@@ -189,7 +219,7 @@ def main():
     individual_analysis(normalized_corpus)
 
     # analysis of all the lyrics of all the songs (use a different form of normalization)
-    overall_analysis(corpus)
+    # overall_analysis(corpus)
 
     # Tfidf similarity (of whole corpus)
     # tfidf_similarity(normalized_corpus, 0)
@@ -197,7 +227,7 @@ def main():
     # Clustering (of whole corpus)
     # clustering(normalized_corpus)
 
-    print('program done.')
+    print('\n\n\nprogram done.')
 
 
 
