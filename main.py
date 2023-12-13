@@ -30,26 +30,27 @@ def most_common(song_name, lyrics, plot = False):
     most_frequent = c.most_common(300)
     print('Most common word: ' + most_frequent[0][0])
 
-    from wordcloud import WordCloud
-    # Extract words and counts
-    words = [word for word, count in most_frequent]
-    counts = [count for word, count in most_frequent]
-    # Create a dictionary with words and their frequencies
-    word_freq = {words[i]: counts[i] for i in range(len(words))}
-    # Create a WordCloud object
-    wordcloud = WordCloud(width=800, height=400, background_color='white').generate_from_frequencies(word_freq)
+    if plot:
+        from wordcloud import WordCloud
+        # Extract words and counts
+        words = [word for word, count in most_frequent]
+        counts = [count for word, count in most_frequent]
+        # Create a dictionary with words and their frequencies
+        word_freq = {words[i]: counts[i] for i in range(len(words))}
+        # Create a WordCloud object
+        wordcloud = WordCloud(width=800, height=400, background_color='white').generate_from_frequencies(word_freq)
 
-    # Plot the WordCloud
-    plt.figure(figsize=(10, 6))  # Set the figure size
-    plt.title(song_name)
-    plt.imshow(wordcloud, interpolation='bilinear')
-    plt.axis('off')  # Remove axis
+        # Plot the WordCloud
+        plt.figure(figsize=(10, 6))  # Set the figure size
+        plt.title(song_name)
+        plt.imshow(wordcloud, interpolation='bilinear')
+        plt.axis('off')  # Remove axis
 
-    path = './plots/' + str(date.today()) + '/mostCommon/'
-    if not os.path.exists(path):
-        os.makedirs(path)
-    plt.savefig(path + song_name)
-    plt.close()
+        path = './plots/' + str(date.today()) + '/mostCommon/'
+        if not os.path.exists(path):
+            os.makedirs(path)
+        plt.savefig(path + song_name)
+        plt.close()
 
 def plot_NRCLex_emotion(data, title):
     labels = list(data.keys())
